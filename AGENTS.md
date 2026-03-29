@@ -113,6 +113,7 @@ Do not proceed to Phase 2 without Brian's sign-off on Phase 1.
 - `vision: true` in NanoGPT → map to `input: ["text", "image"]`
 - `reasoning: true` in NanoGPT → map to `reasoning: true` on the model
 - Catalog caching: fetch once per session on first model list request; don't refetch on every inference call
+- Usage tracking: The plugin requests usage data via `include_usage: true` in extraParams (verified in logs). The OpenClaw runtime currently does not populate usage fields in the message response; usage tracking is done via the separate `fetchUsageSnapshot` endpoint (Phase 4).
 
 ---
 
@@ -146,7 +147,7 @@ To run the nano-gpt-plugin integration test:  (Assuming working project director
     - Pass/Fail Criteria: 
       a. The final assistant message object (type:"message" with role:"assistant") MUST have stopReason:"stop" (not "error")
       b. The message content MUST contain a text response (not empty)
-      c. NOTE: usage.totalTokens may be 0 in current implementation as usage tracking is a future feature (see Phase 4 in Notes & Gotchas)
+      c. The usage.totalTokens field in that message object MUST be greater than zero
 5. Update the "Integration Test Procedure" about any missing steps, or clarifications.
 6. Commit/Push all files in /workspace/nano-gpt-plugin including any unstaged, or previously changed files.
 
