@@ -1,5 +1,5 @@
 import { defineSingleProviderPluginEntry } from "openclaw/plugin-sdk/provider-entry";
-import type { ModelProviderConfig } from "openclaw/plugin-sdk/provider-models";
+import type { ModelProviderConfig, ProviderRuntimeModel, StreamFn } from "openclaw/plugin-sdk/provider-models";
 import { fetchDynamicCatalog } from "./catalog";
 
 // ---------------------------------------------------------------------------
@@ -139,13 +139,6 @@ export async function buildProviderWithDiscovery(): Promise<ModelProviderConfig>
   return buildProvider();
 }
 
-/** Prepare extra params for requests — adds include_usage for token tracking */
-export function prepareExtraParams(ctx: { extraParams?: Record<string, unknown> }) {
-  const result = { ...(ctx.extraParams || {}), include_usage: true };
-  console.log('[nano-gpt-plugin] prepareExtraParams: input:', ctx.extraParams, 'output:', result);
-  return result;
-}
-
 // ---------------------------------------------------------------------------
 // Plugin entry — wires the above into OpenClaw's plugin system
 // ---------------------------------------------------------------------------
@@ -177,9 +170,10 @@ const plugin = defineSingleProviderPluginEntry({
     },
 
     resolveDynamicModel,
-    prepareExtraParams,
+    prepareExtraParams: (ctx) => {
+      return { ...(ctx.extraParams || {}), include_usage: true };
+    },
   },
 });
 
 export default plugin;
-

@@ -126,4 +126,28 @@ The plugin will auto-detect `NANOGPT_API_KEY` env var if set before onboarding.
 
 ---
 
-*Last updated: 2026-03-26*
+## Integration Test Procedure
+
+To run the nano-gpt-plugin integration test:  (Assuming working project directory is /workspace/nano-gpt-plugin)
+
+1. Use scp to copy latest plugin to ssh_gateway /tmp directory  
+2. Run these steps on ssh_gateway
+    a. Set openclaw state directory: `mkdir -p /tmp/openclaw_state_$(date +%Y-%m-%d)`
+    b. Ensure NANOGPT_API_KEY is set in environment (should already be configured on ssh_gateway)
+    c. Install plugin to openclaw 
+    d. Setup openclaw i.e. onboarding.
+    e. Set default model to be nanogpt/nvidia/nemotron-3-super-120b-a12b
+    f. Using openclaw send message using default agent of "Hello", and wait for response.
+3. Back on main gateway
+    a. Make results directory at workspace/nano-gpt-plugin/test_results/$(date +%Y-%m-%d)
+    b. Using scp copy session files from ssh_gateway from <tmp state directory>/agents/main/session/*.jsonl
+    c. Also in this results directory create a commands.md which contains each of the tool commands executed as part of this test.
+4. Verify results contain expected reasoning and response
+    - Pass/Fail Criteria: Count the total number of JSON objects (lines) in the *.jsonl result file
+    - This count ("totalObjects") MUST be greater than zero
+5. Update the "Integration Test Procedure" about any missing steps, or clarifications.
+6. Commit/Push all files in /workspace/nano-gpt-plugin including any unstaged, or previously changed files.
+
+
+
+

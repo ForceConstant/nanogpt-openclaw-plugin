@@ -11,7 +11,8 @@ import plugin, {
   resolveDynamicModel,
   resolveUsageAuth,
   fetchUsageSnapshot,
-} from "../src/provider.js";
+  prepareExtraParams,
+} from "../src/provider";
 
 // ---------------------------------------------------------------------------
 // Plugin export shape
@@ -223,4 +224,28 @@ describe("fetchUsageSnapshot (mocked)", () => {
     const promise = fetchUsageSnapshot({ token: "test-key", timeoutMs: 20 });
     await expect(promise).rejects.toThrow();
   }, 10_000);
+});
+
+// ---------------------------------------------------------------------------
+// prepareExtraParams
+// ---------------------------------------------------------------------------
+
+describe("prepareExtraParams", () => {
+  it("adds include_usage: true to extraParams", () => {
+    const ctx = { extraParams: { foo: "bar" } };
+    const result = prepareExtraParams(ctx);
+    expect(result).toEqual({ foo: "bar", include_usage: true });
+  });
+
+  it("returns { include_usage: true } when extraParams is undefined", () => {
+    const ctx = { extraParams: undefined };
+    const result = prepareExtraParams(ctx);
+    expect(result).toEqual({ include_usage: true });
+  });
+
+  it("returns { include_usage: true } when extraParams is null", () => {
+    const ctx = { extraParams: null };
+    const result = prepareExtraParams(ctx);
+    expect(result).toEqual({ include_usage: true });
+  });
 });

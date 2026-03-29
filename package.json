@@ -1,6 +1,6 @@
 {
   "name": "@openclaw/nano-gpt",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "NanoGPT provider plugin for OpenClaw — dynamic model catalog, auth, and usage tracking",
   "type": "module",
   "main": "dist/index.js",
@@ -20,7 +20,10 @@
     "dist/"
   ],
   "openclaw": {
-    "plugin": "./openclaw.plugin.json"
+    "plugin": "./openclaw.plugin.json",
+    "extensions": [
+      "./dist/index.js"
+    ]
   },
   "keywords": [
     "openclaw",

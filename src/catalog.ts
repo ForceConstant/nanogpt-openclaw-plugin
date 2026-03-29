@@ -42,7 +42,7 @@ export function mapNanoModelToOpenClaw(raw: {
   id: string;
   name: string;
   reasoning: boolean;
-  input: string[];
+  input: ("text" | "image")[];
   cost: { input: number; output: number; cacheRead: number; cacheWrite: number };
   contextWindow: number;
   maxTokens: number;
@@ -56,7 +56,7 @@ export function mapNanoModelToOpenClaw(raw: {
     id: raw.id.startsWith("nano-gpt/") ? raw.id : `nano-gpt/${raw.id}`,
     name: raw.name ?? raw.id,
     reasoning: raw.capabilities?.reasoning ?? false,
-    input: raw.capabilities?.vision ? (["text", "image"] as const) : (["text"] as const),
+    input: (raw.capabilities?.vision ? ["text", "image"] : ["text"]) as ("text" | "image")[],
     cost: {
       input: promptPrice / 1_000_000,
       output: completionPrice / 1_000_000,
