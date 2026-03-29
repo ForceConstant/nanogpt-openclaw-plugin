@@ -143,8 +143,10 @@ To run the nano-gpt-plugin integration test:  (Assuming working project director
     b. Using scp copy session files from ssh_gateway from <tmp state directory>/agents/main/session/*.jsonl
     c. Also in this results directory create a commands.md which contains each of the tool commands executed as part of this test.
 4. Verify results contain expected reasoning and response
-    - Pass/Fail Criteria: Count the total number of JSON objects (lines) in the *.jsonl result file
-    - This count ("totalObjects") MUST be greater than zero
+    - Pass/Fail Criteria: 
+      a. The final assistant message object (type:"message" with role:"assistant") MUST have stopReason:"stop" (not "error")
+      b. The message content MUST contain a text response (not empty)
+      c. NOTE: usage.totalTokens may be 0 in current implementation as usage tracking is a future feature (see Phase 4 in Notes & Gotchas)
 5. Update the "Integration Test Procedure" about any missing steps, or clarifications.
 6. Commit/Push all files in /workspace/nano-gpt-plugin including any unstaged, or previously changed files.
 
