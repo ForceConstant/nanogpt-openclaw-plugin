@@ -8,7 +8,8 @@ NanoGPT provider plugin for OpenClaw
 - Auto-populates model capabilities (vision, reasoning, context window, pricing)
 - Handles `NANOGPT_API_KEY` environment variable
 - Provides `openclaw onboard --nano-gpt-api-key <key>` flow
-- Usage tracking via `/api/subscription/v1/usage`
+- Fix usage tracking by adding include_usage: true to all outgoing requests.
+- Subscription usage tracking via `/api/subscription/v1/usage`
 - Balance checking via `/api/check-balance`
 - Supports all NanoGPT model families: OpenAI, Anthropic, Google, xAI, DeepSeek, Moonshot, Qwen, Groq, and 50+ more
 

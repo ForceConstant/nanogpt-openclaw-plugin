@@ -1,157 +1,286 @@
-# AGENTS.md — NanoGPT Provider Plugin
+# AGENTS.md — Codex CLI Runbook for NanoGPT Plugin
 
-> **Living document.** Update this as the project evolves — new decisions, completed phases, found gotchas, and architecture choices should be recorded here so any agent (or human) can pick this up and understand the current state instantly.
-
----
+Living document for Codex CLI + human contributors. Keep this updated when behavior, workflows, or constraints change.
 
 ## Project Overview
 
-**Name:** `@openclaw/nano-gpt`
-**Type:** OpenClaw provider plugin (standalone npm package)
-**Goal:** First-class NanoGPT support in OpenClaw — dynamic model catalog, API-key auth, usage tracking.
-**Repo:** `http://git.search.dontexist.com/openclaw/nano-gpt-plugin`
-**Status:** Planning complete; implementation pending.
+- Package: `@openclaw/nano-gpt`
+- Provider ID: `nano-gpt`
+- Type: OpenClaw provider plugin
+- Purpose: NanoGPT support in OpenClaw with API-key auth, dynamic model catalog, and usage/balance tracking
+- Repository: `http://git.search.dontexist.com/openclaw/nano-gpt-plugin`
 
----
+## Repository Map
 
-## What This Is
+- `AGENTS.md`: operational guide for Codex/humans
+- `PLAN.md`: planning and replanning notes
+- `README.md`: user-facing setup/usage documentation
+- `openclaw.plugin.json`: plugin metadata and auth config
+- `package.json`: scripts + package metadata
+- `src/provider.ts`: provider entry/registration logic
+- `src/catalog.ts`: NanoGPT model catalog client + mapping
+- `src/usage.ts`: usage and balance clients
+- `src/types.ts`: API response/request types
+- `tests/provider.test.ts`: provider unit tests
+- `test_results/<YYYY-MM-DD>/`: integration test artifacts
 
-A plugin that registers `nano-gpt` as an OpenClaw model provider. It lets OpenClaw:
-1. Authenticate via `NANOGPT_API_KEY`
-2. Pull the live model catalog from nano-gpt.com's API (no hardcoded lists)
-3. Accept any nano-gpt model ID (e.g. `nano-gpt/anthropic/claude-opus-4.6`)
-4. Track usage and balance from nano-gpt.com's usage endpoints
 
----
+## Commit and PR Conventions
 
-## File Structure
+### Commit format
 
+- Subject prefixes: `feat:`, `fix:`, `test:`, `docs:`, `chore:`
+- Keep subject line under ~72 chars when possible.
+
+Commit subject template:
+
+```text
+<type>: <concise change summary>
 ```
-nano-gpt-plugin/
-├── AGENTS.md              ← YOU ARE HERE (project state, decisions, conventions)
-├── PLAN.md                ← Full implementation plan (source of truth)
-├── package.json           ← npm package manifest
-├── openclaw.plugin.json   ← Plugin manifest / auth config
-├── src/
-│   ├── provider.ts        ← Main provider implementation
-│   ├── catalog.ts         ← Dynamic catalog fetcher
-│   ├── types.ts           ← NanoGPT API type definitions
-│   └── usage.ts           ← Usage + balance endpoint clients
-└── tests/
-    └── provider.test.ts   ← Unit tests (Vitest, mocked runtime)
+
+Commit body template (use when not trivial):
+
+```text
+Why:
+- <problem or requirement>
+
+What changed:
+- <change 1>
+- <change 2>
+
+Validation:
+- `pnpm test`
+- `pnpm test -- tests/`
+- `openclaw plugins inspect nano-gpt`
+- integration artifacts: `test_results/<YYYY-MM-DD>/`
 ```
 
----
+Example commit:
 
-## Key Decisions (Living)
+```text
+fix: wire nano-gpt onboard and model-set integration commands
 
-| Decision | Value | Rationale |
-|---|---|---|
-| Package name | `@openclaw/nano-gpt` | Follows `@openclaw/<name>` convention |
-| Provider ID | `nano-gpt` | Matches canonical service name |
-| Base URL | `https://nano-gpt.com/api/v1` | Canonical nano-gpt endpoint |
-| API compat | `openai-completions` | OpenAI-compatible endpoint |
-| Auth | API key only (`NANOGPT_API_KEY`) | No OAuth; key is sufficient |
-| Catalog strategy | Dynamic fetch on first use, cached for session | Avoids stale lists; no per-request refetch |
-| Dynamic model resolution | Yes — `resolveDynamicModel` | Accepts any model ID user types |
-| Usage tracking | Yes — `fetchUsageSnapshot` + `fetchBalance` | Daily/monthly limits + balance |
-| Testing | Vitest + mocked `PluginRuntime` | No real OpenClaw instance needed |
+Why:
+- Integration runbook had placeholders for onboarding and model selection.
 
----
+What changed:
+- Added concrete `openclaw onboard --nano-gpt-api-key` command.
+- Added `openclaw models set nano-gpt/...` default model step.
 
-## Testing Strategy
+Validation:
+- Reviewed AGENTS command template block.
+```
 
-**Run tests with:**
+### Pull request expectations
+
+PR body template:
+
+```markdown
+## Summary
+- <behavior change 1>
+- <behavior change 2>
+
+## Risk / Rollback
+- Risk: <low|medium|high>
+- Rollback: <how to revert safely>
+
+## Validation
+- [ ] `pnpm test`
+- [ ] `pnpm test -- tests/`
+- [ ] Integration run completed
+- Artifacts: `test_results/<YYYY-MM-DD>/`
+
+## Docs Updated
+- [ ] `AGENTS.md`
+- [ ] `PLAN.md`
+- [ ] `README.md`
+```
+
+PR title template:
+
+```text
+<type>: <short change summary>
+```
+
+Always link integration artifact paths when integration was run, e.g. `test_results/<YYYY-MM-DD>/`.
+## Required Decisions (Do Not Drift)
+
+- Base URL: `https://nano-gpt.com/api/v1`
+- API mode: `openai-completions`
+- Auth: `NANOGPT_API_KEY` (API key only)
+- Catalog behavior: dynamic fetch, cache per session
+- Dynamic model resolution: enabled (`resolveDynamicModel`)
+- Usage endpoints: `fetchUsageSnapshot` + `fetchBalance`
+
+## Behavior + Mapping Rules
+
+- NanoGPT model IDs may include slashes; pass model IDs through unchanged.
+- Map pricing from dollars-per-million-token to dollars-per-token:
+  - `inputCostPerToken = pricing.prompt / 1_000_000`
+  - `outputCostPerToken = pricing.completion / 1_000_000`
+- Map `vision: true` to `input: ["text", "image"]`.
+- Map `reasoning: true` to `reasoning: true`.
+- Do not refetch catalog on every inference call; fetch lazily and cache.
+- Include `include_usage: true` in extra params.
+- Known runtime behavior: message-level usage may be zero; canonical usage comes from usage snapshot endpoint.
+
+## Unit Test Location and Workflow
+
+### Where unit tests live
+
+- `tests/provider.test.ts`
+- Any new unit tests should be added under `tests/` with `*.test.ts` naming.
+
+### How to run unit tests
+
 ```bash
 pnpm test
-# or scoped:
 pnpm test -- tests/
 ```
 
-**Test pattern (from OpenClaw SDK):**
-- Use Vitest (`describe`, `it`, `expect`, `vi`)
-- Mock the runtime via `createPluginRuntimeStore` + `as unknown as PluginRuntime`
-- Use `vi.fn().mockResolvedValue(...)` for async mocks
-- Import test utilities from `openclaw/plugin-sdk/testing` where applicable
-- **No live OpenClaw instance required** — all tests use mocked/stubbed runtime
+### Unit test conventions
 
-**What to test per phase:**
-- Phase 1: Provider registration, hardcoded catalog, auth resolution
-- Phase 2: Catalog fetch + field mapping
-- Phase 3: Dynamic model resolution
-- Phase 4: Usage snapshot + balance responses
+- Use Vitest (`describe`, `it`, `expect`, `vi`).
+- Mock runtime with `createPluginRuntimeStore` and cast to `PluginRuntime`.
+- Prefer async mocks via `vi.fn().mockResolvedValue(...)`.
+- No live OpenClaw instance required.
 
----
+## Integration Test Location and Workflow
 
-## OpenClaw SDK Reference
+### Where integration results live
 
-Key docs: `/app/docs/plugins/sdk-provider-plugins.md`
-Testing: `/app/docs/plugins/sdk-testing.md`
+- `test_results/<YYYY-MM-DD>/`
+- Required files per run:
+  - `commands.md` (all commands used during test)
+  - `*.jsonl` session files copied from remote OpenClaw state
+
+### Integration procedure
+
+1. Copy latest plugin to `ssh_gateway:/tmp` via `scp`.
+2. On `ssh_gateway`:
+   - `mkdir -p /tmp/openclaw_state_$(date +%Y-%m-%d)`
+   - Ensure `NANOGPT_API_KEY` is exported
+   - Install plugin into OpenClaw: `openclaw plugins install "$REMOTE_PLUGIN_DIR"`
+   - Verify plugin registration: `openclaw plugins inspect nano-gpt`
+   - Run onboarding: `openclaw onboard --nano-gpt-api-key "$NANOGPT_API_KEY"`
+   - Set default model: `openclaw models set nano-gpt/nvidia/nemotron-3-super-120b-a12b`
+   - Send test prompt: `openclaw chat "Hello"` and wait for completion
+3. On local machine (`/workspace/nano-gpt-plugin`):
+   - `mkdir -p test_results/$(date +%Y-%m-%d)`
+   - Copy `<tmp_state_dir>/agents/main/session/*.jsonl` from `ssh_gateway`
+   - Create/update `test_results/<date>/commands.md`
+
+### Integration command templates (copy/paste)
+
+These are templates; replace placeholders before running.
+
+```bash
+# Local machine
+DATE=$(date +%Y-%m-%d)
+PLUGIN_DIR=/workspace/nano-gpt-plugin
+REMOTE_HOST=ssh_gateway
+REMOTE_PLUGIN_DIR=/tmp/nano-gpt-plugin-$DATE
+REMOTE_STATE_DIR=/tmp/openclaw_state_$DATE
+
+# 1) Sync plugin to remote
+scp -r "$PLUGIN_DIR" "$REMOTE_HOST:$REMOTE_PLUGIN_DIR"
+
+# 2) Run remote setup + send test prompt
+ssh "$REMOTE_HOST" "
+  export NANOGPT_API_KEY=\${NANOGPT_API_KEY:?NANOGPT_API_KEY is required}
+  mkdir -p '$REMOTE_STATE_DIR'
+  cd '$REMOTE_PLUGIN_DIR'
+  openclaw plugins install '$REMOTE_PLUGIN_DIR'
+  openclaw plugins inspect nano-gpt
+  openclaw onboard --nano-gpt-api-key "$NANOGPT_API_KEY"
+  openclaw models set nano-gpt/nvidia/nemotron-3-super-120b-a12b
+
+  openclaw chat "Hello"
+"
+
+# 3) Collect results locally
+mkdir -p "$PLUGIN_DIR/test_results/$DATE"
+scp "$REMOTE_HOST:$REMOTE_STATE_DIR/agents/main/session/"*.jsonl "$PLUGIN_DIR/test_results/$DATE/" || true
+```
+
+Create `test_results/$DATE/commands.md` with the exact commands actually executed.
+
+### Integration pass/fail checks
+
+- Logs contain: `[nano-gpt-plugin] prepareExtraParams: input: ... output: { include_usage: true }`
+- Final assistant message object has `stopReason: "stop"`
+- Final assistant message includes non-empty text content
+- `usage.totalTokens` may be `0` (known runtime limitation)
+
+## Research Docs Location
+
+Research and design notes live in `docs/`:
+
+- `docs/00-research-notes.md`
+- `docs/01-nano-gpt-intro.md`
+- `docs/02-nano-gpt-auth.md`
+- `docs/03-nano-gpt-models-api.md`
+- `docs/04-nano-gpt-usage-api.md`
+- `docs/05-openclaw-provider-sdk.md`
+- `docs/06-openclaw-existing-integration.md`
+
+## Codex Memory Items
+
+Codex memory directory on this machine:
+
+- `/home/node/.codex/memories`
+
+Current known state:
+
+- Directory exists
+- No memory files detected yet
+
+When memory files are added, maintain a short index here:
+
+- `<absolute-memory-file-path>`: `<one-line summary>`
+
+## OpenClaw SDK References
+
+- `/app/docs/plugins/sdk-provider-plugins.md`
+- `/app/docs/plugins/sdk-testing.md`
 
 Key imports:
-```typescript
+
+```ts
 import { defineSingleProviderPluginEntry } from "openclaw/plugin-sdk/provider-entry";
 import { createPluginRuntimeStore } from "openclaw/plugin-sdk/runtime-store";
 import type { PluginRuntime } from "openclaw/plugin-sdk/runtime-store";
 ```
 
----
+## Replanning Workflow (README-Feature Driven)
 
-## Current Phase
+When replanning, use `README.md` `## Features` as the baseline checklist.
+Every replan in `PLAN.md` should explicitly map tasks to these features:
 
-**Phase 0 (Done):** Research + planning
-**Phase 1 (Next):** Skeleton + static provider — package scaffolding, hardcoded model list, auth flow, chat completions verification.
+- Dynamic model catalog from `https://nano-gpt.com/api/v1/models?detailed=true`
+- Auto-populate model capabilities (vision, reasoning, context window, pricing)
+- `NANOGPT_API_KEY` handling
+- `openclaw onboard --nano-gpt-api-key <key>` flow
+- Include `include_usage: true` on outgoing requests
+- Subscription usage tracking via `/api/subscription/v1/usage`
+- Balance checking via `/api/check-balance`
+- Support broad NanoGPT model families (OpenAI, Anthropic, Google, xAI, DeepSeek, Moonshot, Qwen, Groq, and others)
 
-Do not proceed to Phase 2 without Brian's sign-off on Phase 1.
+### Replan steps
 
----
+1. Read current `README.md` features and copy them into a checklist block in `PLAN.md`.
+2. Mark each feature as one of: `implemented`, `partial`, `not started`, `needs verification`.
+3. Create tasks grouped by feature, with test coverage expectations per task.
+4. Identify integration-test evidence needed for each changed feature.
+5. After implementation, update:
+   - `PLAN.md` status per feature
+   - `README.md` features if behavior changed
+   - `AGENTS.md` gotchas/workflow if process changed
 
-## Notes & Gotchas
+## Maintenance Checklist
 
-- NanoGPT model IDs contain slashes (e.g. `anthropic/claude-opus-4.6`) — no splitting needed, pass as-is
-- NanoGPT returns `pricing.prompt` and `pricing.completion` in $/million tokens — divide by 1,000,000 for OpenClaw's per-token cost
-- `vision: true` in NanoGPT → map to `input: ["text", "image"]`
-- `reasoning: true` in NanoGPT → map to `reasoning: true` on the model
-- Catalog caching: fetch once per session on first model list request; don't refetch on every inference call
-- Usage tracking: The plugin requests usage data via `include_usage: true` in extraParams (verified in logs). The OpenClaw runtime currently does not populate usage fields in the message response; usage tracking is done via the separate `fetchUsageSnapshot` endpoint (Phase 4).
-
----
-
-## How to Onboard (when implemented)
-
-```bash
-openclaw onboard --nano-gpt-api-key <key>
-```
-
-The plugin will auto-detect `NANOGPT_API_KEY` env var if set before onboarding.
-
----
-
-## Integration Test Procedure
-
-To run the nano-gpt-plugin integration test:  (Assuming working project directory is /workspace/nano-gpt-plugin)
-
-1. Use scp to copy latest plugin to ssh_gateway /tmp directory  
-2. Run these steps on ssh_gateway
-    a. Set openclaw state directory: `mkdir -p /tmp/openclaw_state_$(date +%Y-%m-%d)`
-    b. Ensure NANOGPT_API_KEY is set in environment (should already be configured on ssh_gateway)
-    c. Install plugin to openclaw 
-    d. Setup openclaw i.e. onboarding.
-    e. Set default model to be nanogpt/nvidia/nemotron-3-super-120b-a12b
-    f. Using openclaw send message using default agent of "Hello", and wait for response.
-3. Back on main gateway
-    a. Make results directory at workspace/nano-gpt-plugin/test_results/$(date +%Y-%m-%d)
-    b. Using scp copy session files from ssh_gateway from <tmp state directory>/agents/main/session/*.jsonl
-    c. Also in this results directory create a commands.md which contains each of the tool commands executed as part of this test.
-4. Verify results contain expected reasoning and response
-    - Pass/Fail Criteria: 
-      a. The plugin logs must contain: `[nano-gpt-plugin] prepareExtraParams: input: ... output: { include_usage: true }`
-      b. The final assistant message object (type:"message" with role:"assistant") MUST have stopReason:"stop" (not "error")
-      c. The message content MUST contain a text response (not empty)
-      d. NOTE: The usage.totalTokens in the message may be 0 because the OpenClaw runtime does not currently populate usage from the API response. Usage tracking is done via the separate fetchUsageSnapshot endpoint (Phase 4).
-5. Update the "Integration Test Procedure" about any missing steps, or clarifications.
-6. Commit/Push all files in /workspace/nano-gpt-plugin including any unstaged, or previously changed files.
-
-
-
-
+- Keep this file and `PLAN.md` aligned after each major change.
+- Add newly discovered gotchas immediately.
+- Keep integration procedure accurate and date-stamped where useful.
+- Ensure every integration run has artifacts in `test_results/<YYYY-MM-DD>/`.
+- If project-level memory files are created, add them to the memory index section above.
