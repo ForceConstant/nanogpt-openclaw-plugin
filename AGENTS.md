@@ -214,7 +214,7 @@ Create `test_results/$DATE/commands.md` with the exact commands actually execute
 - Final assistant message object has `stopReason: "stop"`
 - Session *.jsonl files contain non-zero input/output/total token counts (verifying include_usage works end-to-end)
 - Final assistant message includes non-empty text content
-- `usage.totalTokens` may be `0` (known runtime limitation)
+- `usage.totalTokens` should be larger than zero if `include_usage: true` is being included as part of request
 
 ## Research Docs Location
 
