@@ -141,8 +141,10 @@ export async function buildProviderWithDiscovery(): Promise<ModelProviderConfig>
 
 /** Prepare extra params for requests — adds include_usage for token tracking */
 export function prepareExtraParams(ctx: { extraParams?: Record<string, unknown> }) {
+  console.log('[nano-gpt-plugin] prepareExtraParams CALLED');
   const result = { ...(ctx.extraParams || {}), include_usage: true };
-  console.log('[nano-gpt-plugin] prepareExtraParams: input:', ctx.extraParams, 'output:', result);
+  console.log('[nano-gpt-plugin] prepareExtraParams: input:', JSON.stringify(ctx.extraParams), 'output:', JSON.stringify(result));
+  console.log('[nano-gpt-plugin] prepareExtraParams - full ctx:', Object.keys(ctx));
   return result;
 }
 
