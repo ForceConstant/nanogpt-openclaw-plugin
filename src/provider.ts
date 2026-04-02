@@ -161,18 +161,17 @@ const plugin = defineSingleProviderPluginEntry({
     label: "NanoGPT",
     docsPath: "/providers/nano-gpt",
 
-    auth: [
-      {
-        methodId: "api-key",
-        label: "NanoGPT API key",
-        hint: "API key from your nano-gpt.com dashboard",
-        optionKey: "nanoGptApiKey",
-        flagName: "--nano-gpt-api-key",
-        envVar: "NANOGPT_API_KEY",
-        promptMessage: "Enter your NanoGPT API key",
-        defaultModel: "nano-gpt/openai/gpt-5.2",
-      },
-    ],
+      auth: [
+        {
+          methodId: "api-key",
+          label: "NanoGPT API key",
+          hint: "API key from your nano-gpt.com dashboard",
+          optionKey: "nanoGptApiKey",
+          flagName: "--nano-gpt-api-key",
+          envVar: "NANOGPT_API_KEY",
+          promptMessage: "Enter your NanoGPT API key",
+        },
+      ],
 
     catalog: {
       buildProvider: buildProviderWithDiscovery,

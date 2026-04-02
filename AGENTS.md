@@ -145,76 +145,11 @@ pnpm test -- tests/
 - Prefer async mocks via `vi.fn().mockResolvedValue(...)`.
 - No live OpenClaw instance required.
 
-## Integration Test Location and Workflow
+## Integration Test
 
-### Where integration results live
+Use `final_integration_test.sh` to run integration tests and collect data.
 
-- `test_results/<YYYY-MM-DD>/`
-- Required files per run:
-  - `commands.md` (all commands used during test)
-  - `*.jsonl` session files copied from remote OpenClaw state
-
-### Integration procedure
-
-1. Copy latest plugin to `ssh_gateway:/tmp` via tar (exclude .git, node_modules).
-2. On `ssh_gateway`:
-   - `mkdir -p /tmp/openclaw_state_$(date +%Y-%m-%d)`
-   - Ensure `NANOGPT_API_KEY` is exported
-   - Install plugin: `openclaw plugins install "$REMOTE_PLUGIN_DIR" --dangerously-force-unsafe-install`
-   - Verify plugin: `openclaw plugins inspect nano-gpt`
-   - Start gateway: `nohup openclaw gateway run > /tmp/gateway.log 2>&1 &`
-   - Run onboarding: `openclaw onboard --non-interactive --accept-risk --nano-gpt-api-key "$NANOGPT_API_KEY" --flow quickstart --skip-health`
-   - Set default model: `openclaw models set nano-gpt/nvidia/nemotron-3-super-120b-a12b`
-   - Send test prompt: `openclaw agent --session-id test-nano-$(date +%s) --message 'Hello' --timeout 120`
-3. On local machine (`/workspace/nano-gpt-plugin`):
-   - `mkdir -p test_results/$(date +%Y-%m-%d)`
-   - Copy `<tmp_state_dir>/agents/main/session/*.jsonl` from `ssh_gateway`
-   - Create/update `test_results/<date>/commands.md`
-
-### Integration command templates (copy/paste)
-
-These are templates; replace placeholders before running.
-
-```bash
-# Local machine
-DATE=$(date +%Y-%m-%d)
-PLUGIN_DIR=/workspace/nano-gpt-plugin
-REMOTE_HOST=ssh_gateway
-REMOTE_PLUGIN_DIR=/tmp/nano-gpt-plugin-$DATE
-REMOTE_STATE_DIR=/tmp/openclaw_state_$DATE
-
-# 1) Sync plugin to remote (exclude .git, node_modules)
-tar --exclude='.git' --exclude='node_modules' --exclude='pnpm-lock.yaml' -czf - . | \
-  ssh -o ConnectTimeout=30 "$REMOTE_HOST" "rm -rf $REMOTE_PLUGIN_DIR 2>/dev/null; mkdir -p $REMOTE_PLUGIN_DIR && tar -xzf - -C $REMOTE_PLUGIN_DIR"
-
-# 2) Run remote setup + send test prompt
-ssh -o ConnectTimeout=30 "$REMOTE_HOST" "
-  export NANOGPT_API_KEY=\${NANOGPT_API_KEY:?NANOGPT_API_KEY is required}
-  mkdir -p '$REMOTE_STATE_DIR'
-  cd '$REMOTE_PLUGIN_DIR'
-  openclaw plugins install '$REMOTE_PLUGIN_DIR' --dangerously-force-unsafe-install
-  openclaw plugins inspect nano-gpt
-  nohup openclaw gateway run > /tmp/gateway.log 2>&1 &
-  sleep 5
-  openclaw onboard --non-interactive --accept-risk --nano-gpt-api-key \"$NANOGPT_API_KEY\" --flow quickstart --skip-health
-  openclaw models set nano-gpt/nvidia/nemotron-3-super-120b-a12b
-  openclaw agent --session-id test-nano-\$(date +%s) --message 'Hello' --timeout 120
-"
-
-# 3) Collect results locally
-mkdir -p "$PLUGIN_DIR/test_results/$DATE"
-scp "$REMOTE_HOST:/home/node/.openclaw/agents/main/session/"*.jsonl "$PLUGIN_DIR/test_results/$DATE/" || true
-```
-
-Create `test_results/$DATE/commands.md` with the exact commands actually executed.
-
-### Integration pass/fail checks
-
-- Logs contain: `[nano-gpt-plugin] prepareExtraParams: input: ... output: { include_usage: true }`
-- Final assistant message object has `stopReason: "stop"`
-- Session *.jsonl files contain non-zero input/output/total token counts (verifying include_usage works end-to-end)
-- Final assistant message includes non-empty text content
-- `usage.totalTokens` should be larger than zero if `include_usage: true` is being included as part of request
+To verify `include_usage: true` is being added correctly, check that `totalTokens > 0` in collected session `*.jsonl` files.
 
 ## Research Docs Location
 
