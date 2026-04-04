@@ -20,14 +20,4 @@ export interface NanoGPTModelsResponse {
   models: NanoGPTModel[];
 }
 
-export interface NanoGPTUsageResponse {
-  usage: {
-    used: number;
-    limit: number;
-    period: string; // "daily" | "monthly"
-  };
-}
 
-export interface NanoGPTBalanceResponse {
-  balance: number; // USD
-}

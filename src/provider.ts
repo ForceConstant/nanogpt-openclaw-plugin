@@ -145,9 +145,7 @@ export async function buildProviderWithDiscovery(): Promise<ModelProviderConfig>
 /** Prepare extra params for requests — adds stream_options with include_usage for token tracking */
 export function prepareExtraParams(ctx: { extraParams?: Record<string, unknown> }) {
   const input = ctx.extraParams || {};
-  const output = { ...input, stream_options: { include_usage: true } };
-  console.log(`[nano-gpt-plugin] prepareExtraParams: input: ${JSON.stringify(input)} output: ${JSON.stringify(output)}`);
-  return output;
+  return { ...input, stream_options: { include_usage: true } };
 }
 
 // ---------------------------------------------------------------------------
@@ -194,7 +192,6 @@ const plugin = defineSingleProviderPluginEntry({
               if (!p.stream_options) {
                 p.stream_options = { include_usage: true };
               }
-              console.log(`[nano-gpt-plugin] wrapStreamFn payload with include_usage: ${JSON.stringify(payload)}`);
             }
             return originalOnPayload?.(payload, model);
           },

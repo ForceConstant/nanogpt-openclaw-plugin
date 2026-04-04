@@ -23,7 +23,18 @@
     "plugin": "./openclaw.plugin.json",
     "extensions": [
       "./dist/index.js"
-    ]
+    ],
+    "providers": [
+      "nano-gpt"
+    ],
+    "compat": {
+      "pluginApi": ">=2026.3.24-beta.2",
+      "minGatewayVersion": "2026.3.24-beta.2"
+    },
+    "build": {
+      "openclawVersion": "2026.3.24-beta.2",
+      "pluginSdkVersion": "2026.3.24-beta.2"
+    }
   },
   "keywords": [
     "openclaw",
