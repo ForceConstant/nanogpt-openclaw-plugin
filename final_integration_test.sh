@@ -59,12 +59,16 @@ ssh -o ConnectTimeout=30 "$REMOTE_HOST" "
 echo "Step 7: Waiting for session file to be written..."
 sleep 3
 
-# 8) Collect results
-echo "Step 8: Collecting results..."
+# 8) Collect gateway logs (contains prepareExtraParams debug output)
+echo "Step 8: Collecting gateway logs..."
+mkdir -p "$PLUGIN_DIR/test_results/$DATE"
+scp "$REMOTE_HOST:/tmp/gateway.log" "$PLUGIN_DIR/test_results/$DATE/gateway.log" 2>/dev/null || true
+
+# 9) Collect results
+echo "Step 9: Collecting results..."
 LAST_SESSION_ID=$(ssh -o ConnectTimeout=30 "$REMOTE_HOST" "cat /tmp/last_session_id.txt 2>/dev/null || echo 'test-nano-final-$(date +%s)'")
 echo "Looking for session: $LAST_SESSION_ID"
 
-mkdir -p "$PLUGIN_DIR/test_results/$DATE"
 scp "$REMOTE_HOST:/home/node/.openclaw/agents/main/session/${LAST_SESSION_ID}.jsonl" "$PLUGIN_DIR/test_results/$DATE/" 2>/dev/null || true
 
 # Also collect any test-nano files from recent runs as fallback
@@ -72,5 +76,14 @@ scp "$REMOTE_HOST:/home/node/.openclaw/agents/main/sessions/test-nano-*.jsonl" "
 
 echo "Results collected to: $PLUGIN_DIR/test_results/$DATE/"
 ls -la "$PLUGIN_DIR/test_results/$DATE/" || echo "No files in results directory"
+
+# 10) Verify prepareExtraParams debug logs were captured
+echo "Step 10: Checking for prepareExtraParams debug logs..."
+if grep -q "prepareExtraParams" "$PLUGIN_DIR/test_results/$DATE/gateway.log" 2>/dev/null; then
+  echo "SUCCESS: prepareExtraParams debug logs found in gateway.log"
+  grep "prepareExtraParams" "$PLUGIN_DIR/test_results/$DATE/gateway.log"
+else
+  echo "WARNING: No prepareExtraParams debug logs found"
+fi
 
 echo "Integration test completed successfully!"

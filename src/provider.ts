@@ -16,6 +16,7 @@ const STATIC_MODELS: ModelProviderConfig["models"] = [
     cost: { input: 1.25, output: 10, cacheRead: 0, cacheWrite: 0 },
     contextWindow: 128_000,
     maxTokens: 32_768,
+    compat: { supportsUsageInStreaming: true },
   },
   {
     id: "nano-gpt/anthropic/claude-opus-4.6",
@@ -25,6 +26,7 @@ const STATIC_MODELS: ModelProviderConfig["models"] = [
     cost: { input: 6, output: 30, cacheRead: 0, cacheWrite: 0 },
     contextWindow: 200_000,
     maxTokens: 32_768,
+    compat: { supportsUsageInStreaming: true },
   },
 ];
 
@@ -55,6 +57,7 @@ export function resolveDynamicModel(ctx: { modelId: string }) {
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
     contextWindow: 128_000,
     maxTokens: 8_192,
+    compat: { supportsUsageInStreaming: true },
   };
 }
 
@@ -139,13 +142,12 @@ export async function buildProviderWithDiscovery(): Promise<ModelProviderConfig>
   return buildProvider();
 }
 
-/** Prepare extra params for requests — adds include_usage for token tracking */
+/** Prepare extra params for requests — adds stream_options with include_usage for token tracking */
 export function prepareExtraParams(ctx: { extraParams?: Record<string, unknown> }) {
-  console.log('[nano-gpt-plugin] prepareExtraParams CALLED');
-  const result = { ...(ctx.extraParams || {}), include_usage: true };
-  console.log('[nano-gpt-plugin] prepareExtraParams: input:', JSON.stringify(ctx.extraParams), 'output:', JSON.stringify(result));
-  console.log('[nano-gpt-plugin] prepareExtraParams - full ctx:', Object.keys(ctx));
-  return result;
+  const input = ctx.extraParams || {};
+  const output = { ...input, stream_options: { include_usage: true } };
+  console.log(`[nano-gpt-plugin] prepareExtraParams: input: ${JSON.stringify(input)} output: ${JSON.stringify(output)}`);
+  return output;
 }
 
 // ---------------------------------------------------------------------------
@@ -179,6 +181,26 @@ const plugin = defineSingleProviderPluginEntry({
 
     resolveDynamicModel,
     prepareExtraParams,
+    wrapStreamFn: (ctx) => {
+      if (!ctx.streamFn) return undefined;
+      const inner = ctx.streamFn;
+      return (model, context, options) => {
+        const originalOnPayload = options?.onPayload;
+        return inner(model, context, {
+          ...options,
+          onPayload: (payload) => {
+            if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+              const p = payload as Record<string, unknown>;
+              if (!p.stream_options) {
+                p.stream_options = { include_usage: true };
+              }
+              console.log(`[nano-gpt-plugin] wrapStreamFn payload with include_usage: ${JSON.stringify(payload)}`);
+            }
+            return originalOnPayload?.(payload, model);
+          },
+        });
+      };
+    },
   },
 });
 

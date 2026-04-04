@@ -231,21 +231,21 @@ describe("fetchUsageSnapshot (mocked)", () => {
 // ---------------------------------------------------------------------------
 
 describe("prepareExtraParams", () => {
-  it("adds include_usage: true to extraParams", () => {
+  it("adds stream_options with include_usage: true to extraParams", () => {
     const ctx = { extraParams: { foo: "bar" } };
     const result = prepareExtraParams(ctx);
-    expect(result).toEqual({ foo: "bar", include_usage: true });
+    expect(result).toEqual({ foo: "bar", stream_options: { include_usage: true } });
   });
 
-  it("returns { include_usage: true } when extraParams is undefined", () => {
+  it("returns { stream_options: { include_usage: true } } when extraParams is undefined", () => {
     const ctx = { extraParams: undefined };
     const result = prepareExtraParams(ctx);
-    expect(result).toEqual({ include_usage: true });
+    expect(result).toEqual({ stream_options: { include_usage: true } });
   });
 
-  it("returns { include_usage: true } when extraParams is null", () => {
+  it("returns { stream_options: { include_usage: true } } when extraParams is null", () => {
     const ctx = { extraParams: null };
     const result = prepareExtraParams(ctx);
-    expect(result).toEqual({ include_usage: true });
+    expect(result).toEqual({ stream_options: { include_usage: true } });
   });
 });

@@ -46,6 +46,7 @@ export function mapNanoModelToOpenClaw(raw: {
   cost: { input: number; output: number; cacheRead: number; cacheWrite: number };
   contextWindow: number;
   maxTokens: number;
+  compat: { supportsUsageInStreaming: true };
 } {
   // Pricing is in $/million tokens — convert to per-token cost
   const promptPrice = raw.pricing?.prompt ?? 0;
@@ -65,6 +66,7 @@ export function mapNanoModelToOpenClaw(raw: {
     },
     contextWindow: raw.context_length ?? 128_000,
     maxTokens: raw.max_output_tokens ?? 8_192,
+    compat: { supportsUsageInStreaming: true },
   };
 }
 
