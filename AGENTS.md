@@ -233,7 +233,10 @@ When making changes that pass integration tests:
 3. **Update version**: Bump `version` in `package.json` (semver patch for bug fixes, minor for features)
 4. **Commit**: `git add -A && git commit -m "<type>: <change summary>"`
 5. **Push**: `git push`
-6. **Publish to clawhub**: `npx clawhub publish <plugin-dir>` (requires `clawhub login` first)
+6. **Publish to clawhub** (requires `clawhub login` first):
+   ```bash
+   pnpm build && npx clawhub package publish <plugin-dir> --name @forceconstant/nano-gpt --family code-plugin --version <version> --source-repo ForceConstant/nanogpt-openclaw-plugin --source-commit <commit-sha> --source-ref main
+   ```
 
 Version format: `0.1.x` for development releases.
 
