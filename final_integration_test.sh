@@ -25,7 +25,7 @@ tar --exclude='.git' --exclude='node_modules' --exclude='pnpm-lock.yaml' -czf - 
 
 # 2) Remove existing plugin and install
 echo "Step 2: Installing plugin..."
-ssh -o ConnectTimeout=30 "$REMOTE_HOST" "rm -rf /home/node/.openclaw/extensions/nano-gpt 2>/dev/null; rm ~/.openclaw/agents/main/sessions/* ;cd '$REMOTE_PLUGIN_DIR'; openclaw plugins install '$REMOTE_PLUGIN_DIR' --dangerously-force-unsafe-install"
+ssh -o ConnectTimeout=120 "$REMOTE_HOST" "set -x ; rm -rf /home/node/.openclaw/extensions/nano-gpt 2>/dev/null; rm ~/.openclaw/agents/main/sessions/* ;cd '$REMOTE_PLUGIN_DIR'; openclaw plugins install '$REMOTE_PLUGIN_DIR' "
 
 # 3) Start gateway
 echo "Step 3: Starting gateway..."
