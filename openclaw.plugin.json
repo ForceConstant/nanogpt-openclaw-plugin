@@ -4,9 +4,6 @@
   "version": "0.1.0",
   "description": "NanoGPT provider plugin — AI model aggregator with OpenAI-compatible API",
   "providers": ["nano-gpt"],
-  "providerAuthEnvVars": {
-    "nano-gpt": ["NANOGPT_API_KEY"]
-  },
   "providerAuthChoices": [
     {
       "provider": "nano-gpt",

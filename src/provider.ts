@@ -126,8 +126,10 @@ export async function fetchUsageSnapshot(ctx: {
 }
 
 /** Phase 2 dynamic catalog builder */
-export async function buildProviderWithDiscovery(): Promise<ModelProviderConfig> {
-  const apiKey = process.env.NANOGPT_API_KEY;
+export async function buildProviderWithDiscovery(ctx?: {
+  apiKey?: string;
+}): Promise<ModelProviderConfig> {
+  const apiKey = ctx?.apiKey;
   if (!apiKey) {
     return buildProvider();
   }
