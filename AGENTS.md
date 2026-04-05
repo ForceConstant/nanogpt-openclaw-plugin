@@ -107,7 +107,7 @@ Always link integration artifact paths when integration was run, e.g. `test_resu
 
 - Base URL: `https://nano-gpt.com/api/v1`
 - API mode: `openai-completions`
-- Auth: `NANOGPT_API_KEY` (API key only)
+- Auth: `NANOGPT_API_KEY` via onboarding flow only (not read directly from env)
 - Catalog behavior: dynamic fetch, cache per session
 - Dynamic model resolution: enabled (`resolveDynamicModel`)
 - Usage endpoints: `fetchUsageSnapshot` + `fetchBalance`
@@ -223,3 +223,24 @@ Every replan in `PLAN.md` should explicitly map tasks to these features:
 - Keep integration procedure accurate and date-stamped where useful.
 - Ensure every integration run has artifacts in `test_results/<YYYY-MM-DD>/`.
 - If project-level memory files are created, add them to the memory index section above.
+
+## Standard Update Procedure
+
+When making changes that pass integration tests:
+
+1. **Run unit tests**: `pnpm test`
+2. **Run integration test**: `bash final_integration_test.sh`
+3. **Update version**: Bump `version` in `package.json` (semver patch for bug fixes, minor for features)
+4. **Commit**: `git add -A && git commit -m "<type>: <change summary>"`
+5. **Push**: `git push`
+6. **Publish to clawhub**: `npx clawhub publish <plugin-dir>` (requires `clawhub login` first)
+
+Version format: `0.1.x` for development releases.
+
+### Integration test artifacts
+
+After running `final_integration_test.sh`, artifacts are saved to `test_results/<YYYY-MM-DD>/`:
+- `gateway.log` — gateway service logs
+- `*.jsonl` — session transcripts with usage data
+
+Check that `totalTokens > 0` in session files to verify `include_usage: true` is working.
