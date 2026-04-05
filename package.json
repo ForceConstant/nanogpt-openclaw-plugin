@@ -1,5 +1,5 @@
 {
-  "name": "@openclaw/nano-gpt",
+  "name": "@forceconstant/nano-gpt",
   "version": "0.1.2",
   "description": "NanoGPT provider plugin for OpenClaw — dynamic model catalog, auth, and usage tracking",
   "type": "module",
