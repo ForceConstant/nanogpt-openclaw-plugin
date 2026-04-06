@@ -18,7 +18,7 @@ NanoGPT provider plugin for OpenClaw
 ### From npm (if published)
 
 ```bash
-npm install @openclaw/nano-gpt
+openclaw plugins install clawhub:@forceconstant/nano-gpt
 ```
 
 ### Local development

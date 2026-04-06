@@ -1,6 +1,6 @@
 {
   "name": "@forceconstant/nano-gpt",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "NanoGPT provider plugin for OpenClaw — dynamic model catalog, auth, and usage tracking",
   "type": "module",
   "main": "dist/index.js",
@@ -17,7 +17,8 @@
     "test:watch": "vitest"
   },
   "files": [
-    "dist/"
+    "dist/",
+    "openclaw.plugin.json"
   ],
   "openclaw": {
     "plugin": "./openclaw.plugin.json",
@@ -29,7 +30,7 @@
     ],
     "compat": {
       "pluginApi": ">=2026.3.24-beta.2",
-      "minGatewayVersion": "2026.3.24-beta.2"
+      "minGatewayVersion": ">=2026.3.24-beta.2"
     },
     "build": {
       "openclawVersion": "2026.3.24-beta.2",
@@ -44,13 +45,17 @@
   ],
   "license": "MIT",
   "peerDependencies": {
-    "openclaw": "*"
+    "openclaw": ">=2026.3.24-beta.2"
+  },
+  "peerDependenciesMeta": {
+    "openclaw": {
+      "optional": true
+    }
   },
   "devDependencies": {
+    "openclaw": "^2026.4.5",
     "typescript": "^6.0.2",
     "vitest": "^3.1.4"
   },
-  "dependencies": {
-    "clawhub": "^0.9.0"
-  }
+  "dependencies": {}
 }
