@@ -15,10 +15,11 @@ NanoGPT provider plugin for OpenClaw
 
 ## Installation
 
-### From npm (if published)
+### From clawhub
 
 ```bash
 openclaw plugins install clawhub:@forceconstant/nano-gpt
+openclaw onboard --non-interactive --nano-gpt-api-key "$NANOGPT_API_KEY" --flow quickstart
 ```
 
 ### Local development
