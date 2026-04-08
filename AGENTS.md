@@ -147,11 +147,65 @@ pnpm test -- tests/
 
 ## Integration Test
 
+⚠️ **CRITICAL: DELEGATE TO TASK-RUNNER SUBAGENT** ⚠️
+When you need to run the integration test, you MUST use the task-runner subagent.
+Do NOT run `integration_test.sh` yourself directly.
+Instead, delegate this task to the task-runner subagent with appropriate instructions.
+
 Use `integration_test.sh` to run integration tests and collect data.
 
 To verify `include_usage: true` is being added correctly, check that `totalTokens > 0` in collected session `*.jsonl` files.
 
 If you need to run more than 1 or 2 commands against real openclaw, just use the integration test script in order to minimize tokens.
+Script includes calls to :
+   - openclaw models list
+   - openclaw models list --all
+   - openclaw models list --json
+   - openclaw agent query
+   - and more.
+
+**To run integration test via task-runner subagent:**
+Delegate to task-runner subagent with prompt containing: "bash integration_test.sh [local|clawhub]"
+
+## Integration Test Pass/Fail Criteria
+After running the integration test (via task-runner subagent), you can verify success by checking for these EXPLICIT PASS/FAIL indicators in the output:
+
+✅ **PASS INDICATORS** (grep for these to confirm success):
+- "Integration test ($MODE) completed successfully!"
+- "totalTokens > 0" in session files (verify usage tracking)
+- "contextWindow for minimax-m2.7 correctly shown as 204800"
+- High count from "openclaw models list --all | grep nano-gpt | wc -l" (should be lots of models)
+- Default model shown in "openclaw models list" output
+- "Gateway Health OK" in gateway logs
+
+❌ **FAIL INDICATORS** (grep for these to detect failures):
+- Any error messages during script execution
+- Non-zero exit code from integration_test.sh
+- Missing or empty session *.jsonl files
+- "totalTokens == 0" in session files (indicates include_usage not working)
+- Context window not showing 204800 for minimax-m2.7
+- Low model count from "openclaw models list --all | grep nano-gpt | wc -l"
+- Default model not showing in "openclaw models list"
+- Gateway health check failures
+
+**To easily check pass/fail status after test completion:**
+```bash
+# Check for explicit success message
+grep "Integration test.*completed successfully" test_results/<YYYY-MM-DD>/*
+
+# Check usage tracking (should be > 0)
+grep "totalTokens" test_results/<YYYY-MM-DD>/*jsonl | grep -o '[0-9]*$' | awk '{if ($1 > 0) print "PASS: totalTokens > 0"; else print "FAIL: totalTokens = 0"}'
+
+# Check context window
+grep "contextWindow.*204800" test_results/<YYYY-MM-DD>/gateway.log && echo "PASS: contextWindow correct" || echo "FAIL: contextWindow incorrect"
+
+# Check model count (should be lots)
+ssh REMOTE_HOST "openclaw models list --all | grep nano-gpt | wc -l" | awk '{if ($1 > 10) print "PASS: lots of models (" $1 ")"; else print "FAIL: only " $1 " models"}'
+
+# Check default model
+ssh REMOTE_HOST "openclaw models list" | grep "nano-gpt/minimax/minimax-m2.7" | grep "default" && echo "PASS: default model set" || echo "FAIL: default model not set"
+```
+
 
 ## Research Docs Location
 

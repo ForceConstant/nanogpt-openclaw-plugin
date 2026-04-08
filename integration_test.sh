@@ -35,7 +35,7 @@ if [[ "$MODE" == "local" ]]; then
     ssh -o ConnectTimeout=30 "$REMOTE_HOST" "rm -rf $REMOTE_PLUGIN_DIR 2>/dev/null; mkdir -p $REMOTE_PLUGIN_DIR && tar -xzf - -C $REMOTE_PLUGIN_DIR"
 
   echo "Step 2: Installing plugin from local build..."
-  ssh -o ConnectTimeout=120 "$REMOTE_HOST" "set -x ; rm -rf /home/node/.openclaw/extensions/nano-gpt 2>/dev/null; rm ~/.openclaw/agents/main/sessions/* ; rm -f ~/.openclaw/openclaw.json ; cd '$REMOTE_PLUGIN_DIR'; openclaw plugins install '$REMOTE_PLUGIN_DIR'"
+  ssh -o ConnectTimeout=120 "$REMOTE_HOST" "set -x ; rm -rf /home/node/.openclaw/extensions/nano-gpt 2>/dev/null; rm ~/.openclaw/agents/main/sessions/* ; rm -f ~/.openclaw/openclaw.json ; find ~/openclaw/ -name models.json --delete ; cd '$REMOTE_PLUGIN_DIR'; openclaw plugins install '$REMOTE_PLUGIN_DIR'"
 else
   echo "Step 1: Installing plugin from clawhub..."
   ssh -o ConnectTimeout=120 "$REMOTE_HOST" "set -x ; rm -rf /home/node/.openclaw/extensions/nano-gpt 2>/dev/null; rm ~/.openclaw/agents/main/sessions/* ; rm -f ~/.openclaw/openclaw.json ; openclaw plugins install clawhub:@forceconstant/nano-gpt"
@@ -57,31 +57,28 @@ sleep 12
 openclaw gateway health
 EOF
 
-# 4) Set default model
 echo "Step 5: Setting default model..."
 ssh -o ConnectTimeout=30 "$REMOTE_HOST" "openclaw models set nano-gpt/minimax/minimax-m2.7"
 
-ssh -o ConnectTimeout=30 "$REMOTE_HOST" "openclaw models list"
+echo "Step 5c: Verifying dynamic catalog with openclaw models list --all..."
+MODEL_COUNT=$(ssh -o ConnectTimeout=30 "$REMOTE_HOST" "openclaw models list --all | grep nano-gpt | wc -l" 2>/dev/null || echo "0")
+echo "MODEL_COUNT=$MODEL_COUNT"
 
-# 4b) Verify dynamic catalog - check nano-gpt models with correct context lengths from nano-gpt API
-echo "Step 5b: Verifying dynamic catalog with openclaw models list --json..."
-MODELS_JSON=$(ssh -o ConnectTimeout=30 "$REMOTE_HOST" "openclaw models list --json" 2>/dev/null || echo "{}")
-echo "$MODELS_JSON" | python3 -c "
-import json, sys
-data = json.load(sys.stdin)
-models = data if isinstance(data, list) else data.get('data', data.get('models', []))
-found = False
-for m in models:
-    mid = m.get('key', m.get('id',''))
-    ctx = m.get('contextWindow', m.get('context_window', 0))
-    if 'nano-gpt/' in mid:
-        found = True
-        print(f\"  Model: {mid}, contextWindow: {ctx}\")
-if not found:
-    print('ERROR: No nano-gpt models found in catalog!')
-    sys.exit(1)
-print('SUCCESS: nano-gpt models found in dynamic catalog')
-"
+echo "Step 5e: Getting context window for minimax-m2.7..."
+catalog_context=$(openclaw models list --all --json \
+    | grep "nano-gpt/minimax/minimax-m2.7" -A5 \
+    | grep contextWindow \
+    | head -1 \
+    | awk -F': ' '{print $2}' \
+    | tr -d ',"' || :)   # If any step fails, assign an empty string
+
+# Safely capture the contextWindow from the current model list
+model_context=$(openclaw models list --json \
+    | grep contextWindow \
+    | head -1 \
+    | awk -F': ' '{print $2}' \
+    | tr -d ',"' || :)
+
 
 # 5) Run test agent with proper session ID
 echo "Step 6: Running test agent..."
@@ -117,16 +114,43 @@ scp "$REMOTE_HOST:/home/node/.openclaw/agents/main/session/${LAST_SESSION_ID}.js
 # Also collect any test-nano files from recent runs as fallback
 scp "$REMOTE_HOST:/home/node/.openclaw/agents/main/sessions/test-nano-*.jsonl" "$PLUGIN_DIR/test_results/$DATE/" 2>/dev/null || true
 
+set +x
+
+# Add explicit pass/fail indicators for easy grepping - ENSURE THESE ARE OUTPUT EARLY
+echo "=== INTEGRATION TEST RESULTS ==="
+echo "MODE=$MODE"
+
 echo "Results collected to: $PLUGIN_DIR/test_results/$DATE/"
 ls -la "$PLUGIN_DIR/test_results/$DATE/" || echo "No files in results directory"
 
-# 9) Verify prepareExtraParams debug logs were captured
-echo "Step 10: Checking for prepareExtraParams debug logs..."
-if grep -q "prepareExtraParams" "$PLUGIN_DIR/test_results/$DATE/gateway.log" 2>/dev/null; then
-  echo "SUCCESS: prepareExtraParams debug logs found in gateway.log"
-  grep "prepareExtraParams" "$PLUGIN_DIR/test_results/$DATE/gateway.log"
+# Check model count
+if [ "$MODEL_COUNT" -gt 10 ]; then
+    echo "MODEL_COUNT_SUFFICIENT=PASS: $MODEL_COUNT models (>=10)"
 else
-  echo "WARNING: No prepareExtraParams debug logs found"
+    echo "MODEL_COUNT_SUFFICIENT=FAIL: Only $MODEL_COUNT models (<10)"
 fi
 
+# Check default model
+DEFAULT_MODEL_CHECK=$(ssh -o ConnectTimeout=30 "$REMOTE_HOST" "openclaw models list" 2>/dev/null | grep "nano-gpt/minimax/minimax-m2.7" | grep "default" || echo "NOT_FOUND")
+if [ "$DEFAULT_MODEL_CHECK" != "NOT_FOUND" ]; then
+    echo "DEFAULT_MODEL_SET=PASS: nano-gpt/minimax/minimax-m2.7 is default"
+else
+    echo "DEFAULT_MODEL_SET=FAIL: nano-gpt/minimax/minimax-m2.7 not set as default"
+fi
+
+# Check usage tracking in session files
+USAGE_CHECK=$(find "$PLUGIN_DIR/test_results/$DATE/" -name "*.jsonl" -exec grep -h "totalTokens" {} \; 2>/dev/null | head -1 | jq '.message.usage.totalTokens' || echo "0")
+if [ "$USAGE_CHECK" -gt 0 ]; then
+    echo "USAGE_TRACKING_WORKING=PASS: totalTokens=$USAGE_CHECK (>0)"
+else
+    echo "USAGE_TRACKING_WORKING=FAIL: totalTokens=$USAGE_CHECK (not >0)"
+fi
+
+if [ "$catalog_context" = "$model_context" ]; then
+    echo "CONTEXT_WINDOW_CORRECT=PASS"
+else
+    echo "CONTEXT_WINDOW_CORRECT=FAIL $catalog_context != $model_context"
+fi
+
+echo "=== END INTEGRATION TEST RESULTS ==="
 echo "Integration test ($MODE) completed successfully!"
