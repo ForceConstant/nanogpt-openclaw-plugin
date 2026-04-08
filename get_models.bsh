@@ -1,0 +1,5 @@
+#!/bin/bash
+
+curl --request GET \
+  --url 'https://nano-gpt.com/api/subscription/v1/models?detailed=true' \
+  --header 'Authorization: Bearer $NANOGPT_API_TOKEN' | jq

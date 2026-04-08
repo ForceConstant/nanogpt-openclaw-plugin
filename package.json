@@ -29,12 +29,12 @@
       "nano-gpt"
     ],
     "compat": {
-      "pluginApi": ">=2026.3.24-beta.2",
-      "minGatewayVersion": ">=2026.3.24-beta.2"
+      "pluginApi": ">=2026.4.4",
+      "minGatewayVersion": ">=2026.4.4"
     },
     "build": {
-      "openclawVersion": "2026.3.24-beta.2",
-      "pluginSdkVersion": "2026.3.24-beta.2"
+      "openclawVersion": "2026.4.8",
+      "pluginSdkVersion": "2026.4.8"
     }
   },
   "keywords": [
@@ -45,7 +45,7 @@
   ],
   "license": "MIT",
   "peerDependencies": {
-    "openclaw": ">=2026.3.24-beta.2"
+    "openclaw": ">=2026.4.4"
   },
   "peerDependenciesMeta": {
     "openclaw": {
@@ -53,9 +53,9 @@
     }
   },
   "devDependencies": {
+    "@types/node": "^25.5.2",
     "openclaw": "^2026.4.5",
     "typescript": "^6.0.2",
     "vitest": "^3.1.4"
-  },
-  "dependencies": {}
+  }
 }

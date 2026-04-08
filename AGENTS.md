@@ -147,9 +147,11 @@ pnpm test -- tests/
 
 ## Integration Test
 
-Use `final_integration_test.sh` to run integration tests and collect data.
+Use `integration_test.sh` to run integration tests and collect data.
 
 To verify `include_usage: true` is being added correctly, check that `totalTokens > 0` in collected session `*.jsonl` files.
+
+If you need to run more than 1 or 2 commands against real openclaw, just use the integration test script in order to minimize tokens.
 
 ## Research Docs Location
 
@@ -229,7 +231,7 @@ Every replan in `PLAN.md` should explicitly map tasks to these features:
 When making changes that pass integration tests:
 
 1. **Run unit tests**: `pnpm test`
-2. **Run integration test**: `bash final_integration_test.sh`
+2. **Run integration test**: `bash integration_test.sh`
 3. **Update version**: Bump `version` in `package.json` (semver patch for bug fixes, minor for features)
 4. **Commit**: `git add -A && git commit -m "<type>: <change summary>"`
 5. **Push**: `git push`
@@ -242,7 +244,7 @@ Version format: `0.1.x` for development releases.
 
 ### Integration test artifacts
 
-After running `final_integration_test.sh`, artifacts are saved to `test_results/<YYYY-MM-DD>/`:
+After running `integration_test.sh`, artifacts are saved to `test_results/<YYYY-MM-DD>/`:
 - `gateway.log` — gateway service logs
 - `*.jsonl` — session transcripts with usage data
 
