@@ -1,5 +1,5 @@
 import { defineSingleProviderPluginEntry } from "openclaw/plugin-sdk/provider-entry";
-import type { ModelProviderConfig } from "openclaw/plugin-sdk/provider-models";
+import type { ModelProviderConfig } from "openclaw/plugin-sdk/provider-model-shared";
 import { fetchDynamicCatalog } from "./catalog";
 
 // ---------------------------------------------------------------------------
@@ -126,16 +126,16 @@ export async function fetchUsageSnapshot(ctx: {
 }
 
 /** Phase 2 dynamic catalog builder */
-export async function buildProviderWithDiscovery(ctx?: {
-  apiKey?: string;
+export async function buildProviderWithDiscovery(ctx: {
+  resolveProviderApiKey: (providerId: string) => { apiKey?: string };
 }): Promise<ModelProviderConfig> {
-  const apiKey = ctx?.apiKey;
+  const { apiKey } = ctx.resolveProviderApiKey("nano-gpt");
   if (!apiKey) {
     return buildProvider();
   }
   try {
     const dynamic = await fetchDynamicCatalog({
-      resolveProviderApiKey: () => ({ apiKey }),
+      resolveProviderApiKey: (id: string) => ctx.resolveProviderApiKey(id),
     } as any);
     if (dynamic) return dynamic;
   } catch (e) {
@@ -176,7 +176,29 @@ const plugin = defineSingleProviderPluginEntry({
       ],
 
     catalog: {
-      buildProvider: buildProviderWithDiscovery,
+      order: "simple",
+      run: async (ctx) => {
+        const { apiKey } = ctx.resolveProviderApiKey("nano-gpt");
+        if (!apiKey) {
+          return { provider: buildProvider() };
+        }
+        try {
+          const dynamic = await fetchDynamicCatalog({
+            resolveProviderApiKey: (id: string) => ctx.resolveProviderApiKey(id),
+          } as any);
+          if (dynamic) {
+            return {
+              provider: {
+                ...dynamic,
+                apiKey,
+              },
+            };
+          }
+        } catch (e) {
+          console.warn("Failed to fetch dynamic NanoGPT catalog, falling back to static:", e);
+        }
+        return { provider: buildProvider() };
+      },
     },
 
     resolveDynamicModel,

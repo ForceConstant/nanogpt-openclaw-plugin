@@ -109,7 +109,8 @@ describe("fetchDynamicCatalog", () => {
 
   it("returns catalog when API key is available", async () => {
     const mockResponse = {
-      models: [
+      object: "list",
+      data: [
         {
           id: "openai/gpt-5.2",
           name: "GPT-5.2",
@@ -176,7 +177,8 @@ describe("fetchDynamicCatalog", () => {
 
   it("handles missing/null fields in API response", async () => {
     const mockResponse = {
-      models: [
+      object: "list",
+      data: [
         {
           id: "openai/gpt-5.2",
           // missing name

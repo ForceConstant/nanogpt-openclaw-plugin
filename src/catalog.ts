@@ -8,7 +8,7 @@
  * source (static catalog is used until Phase 2 is explicitly activated).
  */
 
-import type { ProviderCatalogContext } from "openclaw/plugin-sdk/provider-catalog";
+import type { ProviderCatalogContext } from "openclaw/plugin-sdk/plugin-entry";
 
 // ---------------------------------------------------------------------------
 // Types — mirror NanoGPT API response shapes
@@ -90,7 +90,7 @@ export async function fetchDynamicCatalog(
   ctx: ProviderCatalogContext & { signal?: AbortSignal }
 ): Promise<DynamicCatalogResult | null> {
   const { resolveProviderApiKey, signal } = ctx;
-  const { apiKey } = await resolveProviderApiKey();
+  const { apiKey } = resolveProviderApiKey("nano-gpt");
 
   if (!apiKey) return null;
 
@@ -110,9 +110,9 @@ export async function fetchDynamicCatalog(
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const body = (await response.json()) as { models?: any[] };
+  const body = (await response.json()) as { data?: any[] };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const models = (body.models ?? []).map((m) => mapNanoModelToOpenClaw(m as Parameters<typeof mapNanoModelToOpenClaw>[0]));
+  const models = (body.data ?? []).map((m) => mapNanoModelToOpenClaw(m as Parameters<typeof mapNanoModelToOpenClaw>[0]));
 
   return {
     api: "openai-completions",
