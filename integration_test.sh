@@ -105,14 +105,7 @@ mkdir -p "$PLUGIN_DIR/test_results/$DATE"
 scp "$REMOTE_HOST:/tmp/gateway.log" "$PLUGIN_DIR/test_results/$DATE/gateway.log" 2>/dev/null || true
 
 # 8) Collect results
-echo "Step 9: Collecting results..."
-LAST_SESSION_ID=$(ssh -o ConnectTimeout=30 "$REMOTE_HOST" "cat /tmp/last_session_id.txt 2>/dev/null || echo '${SESSION_PREFIX}-$(date +%s)'")
-echo "Looking for session: $LAST_SESSION_ID"
-
-scp "$REMOTE_HOST:/home/node/.openclaw/agents/main/session/${LAST_SESSION_ID}.jsonl" "$PLUGIN_DIR/test_results/$DATE/" 2>/dev/null || true
-
-# Also collect any test-nano files from recent runs as fallback
-scp "$REMOTE_HOST:/home/node/.openclaw/agents/main/sessions/test-nano-*.jsonl" "$PLUGIN_DIR/test_results/$DATE/" 2>/dev/null || true
+scp "$REMOTE_HOST:/home/node/.openclaw/agents/main/sessions/*.jsonl" "$PLUGIN_DIR/test_results/$DATE/" || true
 
 set +x
 

@@ -1,12 +1,16 @@
 import { defineSingleProviderPluginEntry } from "openclaw/plugin-sdk/provider-entry";
 import type { ModelProviderConfig } from "openclaw/plugin-sdk/provider-model-shared";
-import { fetchDynamicCatalog } from "./catalog";
+import { fetchDynamicCatalog, mapNanoModelToOpenClaw } from "./catalog";
 
 // ---------------------------------------------------------------------------
 // Hardcoded catalog — Phase 1 static baseline
 // These models are representative of what NanoGPT actually serves.
 // Phase 2 will replace this with a dynamic fetch from /api/v1/models.
 // ---------------------------------------------------------------------------
+
+let cachedDynamicModels: ReturnType<typeof mapNanoModelToOpenClaw>[] | null = null;
+let catalogFetched = false;
+
 const STATIC_MODELS: ModelProviderConfig["models"] = [
   {
     id: "nano-gpt/openai/gpt-5.2",
@@ -44,7 +48,24 @@ export function buildProvider(): ModelProviderConfig {
 }
 
 /** Phase 3 dynamic model resolution */
-export function resolveDynamicModel(ctx: { modelId: string }) {
+export function resolveDynamicModel(ctx: { modelId: string }): ReturnType<typeof mapNanoModelToOpenClaw> & { provider: string; api: "openai-completions"; baseUrl: string } {
+  const normalizedId = ctx.modelId.startsWith("nano-gpt/") ? ctx.modelId : `nano-gpt/${ctx.modelId}`;
+  const cached = cachedDynamicModels?.find((m) => m.id === ctx.modelId || m.id === normalizedId);
+  if (cached) {
+    return {
+      id: cached.id,
+      name: cached.name,
+      provider: "nano-gpt",
+      api: "openai-completions" as const,
+      baseUrl: "https://nano-gpt.com/api/v1",
+      reasoning: cached.reasoning,
+      input: cached.input,
+      cost: cached.cost,
+      contextWindow: cached.contextWindow,
+      maxTokens: cached.maxTokens,
+      compat: { supportsUsageInStreaming: true },
+    };
+  }
   const modelId = ctx.modelId.replace(/^nano-gpt\//, "");
   return {
     id: ctx.modelId,
@@ -137,7 +158,10 @@ export async function buildProviderWithDiscovery(ctx: {
     const dynamic = await fetchDynamicCatalog({
       resolveProviderApiKey: (id: string) => ctx.resolveProviderApiKey(id),
     } as any);
-    if (dynamic) return dynamic;
+    if (dynamic) {
+      cachedDynamicModels = dynamic.models;
+      return dynamic;
+    }
   } catch (e) {
     console.warn("Failed to fetch dynamic NanoGPT catalog, falling back to static:", e);
   }
@@ -187,6 +211,8 @@ const plugin = defineSingleProviderPluginEntry({
             resolveProviderApiKey: (id: string) => ctx.resolveProviderApiKey(id),
           } as any);
           if (dynamic) {
+            cachedDynamicModels = dynamic.models;
+            catalogFetched = true;
             return {
               provider: {
                 ...dynamic,
