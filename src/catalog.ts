@@ -9,19 +9,7 @@
  */
 
 import type { ProviderCatalogContext } from "openclaw/plugin-sdk/plugin-entry";
-
-// ---------------------------------------------------------------------------
-// Types — mirror NanoGPT API response shapes
-// ---------------------------------------------------------------------------
-
-export interface NanoGPTUsageResponse {
-  dailyInputTokens?: { used: number; limit: number };
-  weeklyInputTokens?: { used: number; limit: number };
-}
-
-export interface NanoGPTBalanceResponse {
-  balance: number;
-}
+import type { NanoGPTModel, NanoGPTModelsResponse } from "./types";
 
 // ---------------------------------------------------------------------------
 // Model field mapper
@@ -31,14 +19,7 @@ export interface NanoGPTBalanceResponse {
  * Maps a raw NanoGPT model object to OpenClaw's internal model representation.
  * Defensively handles null / missing fields with safe defaults.
  */
-export function mapNanoModelToOpenClaw(raw: {
-  id: string;
-  name?: string;
-  context_length?: number | null;
-  max_output_tokens?: number | null;
-  pricing?: { prompt?: number | null; completion?: number | null } | null;
-  capabilities?: { vision?: boolean; reasoning?: boolean } | null;
-}): {
+export function mapNanoModelToOpenClaw(raw: NanoGPTModel): {
   id: string;
   name: string;
   reasoning: boolean;
@@ -109,10 +90,8 @@ export async function fetchDynamicCatalog(
     throw new Error(`NanoGPT catalog fetch failed: ${response.status} ${response.statusText}`);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const body = (await response.json()) as { data?: any[] };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const models = (body.data ?? []).map((m) => mapNanoModelToOpenClaw(m as Parameters<typeof mapNanoModelToOpenClaw>[0]));
+  const body = (await response.json()) as NanoGPTModelsResponse;
+  const models = (body.data ?? []).map((m) => mapNanoModelToOpenClaw(m));
 
   return {
     api: "openai-completions",

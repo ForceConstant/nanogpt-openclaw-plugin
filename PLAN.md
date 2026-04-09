@@ -74,16 +74,20 @@ Map NanoGPT `capabilities` object to OpenClaw model `input`/`reasoning` flags:
 ## File Structure
 
 ```
-extensions/nano-gpt/               # In-repo development path
-  OR
-@openclaw/nano-gpt/              # npm package path (published)
+@forceconstant/nano-gpt/              # npm package path (published)
 
 ├── package.json
 ├── openclaw.plugin.json
-├── index.ts                      # defineSingleProviderPluginEntry
-└── src/
-    ├── provider.test.ts
-    └── usage.ts                  # fetchUsageSnapshot + fetchBalance
+├── src/
+│   ├── index.ts                       # re-exports provider
+│   ├── provider.ts                    # defineSingleProviderPluginEntry
+│   ├── catalog.ts                     # dynamic catalog + model mapping
+│   └── types.ts                       # NanoGPT API response types
+├── tests/
+│   ├── provider.test.ts
+│   └── catalog.test.ts
+├── vitest.config.ts
+└── tsconfig.json
 ```
 
 ---

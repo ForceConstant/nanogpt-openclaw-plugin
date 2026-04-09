@@ -8,7 +8,7 @@ NanoGPT provider plugin for OpenClaw
 - Auto-populates model capabilities (vision, reasoning, context window, pricing)
 - Handles `NANOGPT_API_KEY` environment variable
 - Provides `openclaw onboard --nano-gpt-api-key <key>` flow
-- Fix usage tracking by adding include_usage: true to all outgoing requests.
+- Includes `include_usage: true` on all outgoing requests for accurate token tracking
 - Subscription usage tracking via `/api/subscription/v1/usage`
 - Balance checking via `/api/check-balance`
 - Supports all NanoGPT model families: OpenAI, Anthropic, Google, xAI, DeepSeek, Moonshot, Qwen, Groq, and 50+ more
@@ -21,6 +21,8 @@ NanoGPT provider plugin for OpenClaw
 openclaw plugins install clawhub:@forceconstant/nano-gpt
 openclaw onboard --non-interactive --nano-gpt-api-key "$NANOGPT_API_KEY" --flow quickstart
 ```
+- Note for multi-agent setups, you will need to copy the auth-profile.json to each agent.
+- Recommend also deleting each agents models.json to make sure all models are up to date.
 
 ### Local development
 
@@ -29,8 +31,8 @@ Clone this repository and link it:
 ```bash
 git clone <this-repo>
 cd nano-gpt-plugin
-npm install
-npm run build
+pnpm install
+pnpm run build
 ```
 
 Then, in your OpenClaw workspace, you can use the plugin by referencing the built `dist` directory.
@@ -82,21 +84,19 @@ The plugin does not require any additional configuration beyond the API key.
 ### Building
 
 ```bash
-npm run build
+pnpm run build
 ```
 
 ### Testing
 
 ```bash
-npm test
+pnpm test
 ```
 
 ### Linting
 
-(If you add a linter)
-
 ```bash
-npm run lint
+pnpm run lint
 ```
 
 ## License

@@ -1,7 +1,7 @@
 {
   "id": "nano-gpt",
   "name": "NanoGPT",
-  "version": "0.1.0",
+  "version": "0.1.4",
   "description": "NanoGPT provider plugin — AI model aggregator with OpenAI-compatible API",
   "providers": ["nano-gpt"],
   "providerAuthChoices": [

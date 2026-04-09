@@ -4,3 +4,7 @@ pnpm-lock.yaml
 *.local
 test_results
 .fuse*
+models.txt
+results.txt
+get_models.bsh
+test.bsh

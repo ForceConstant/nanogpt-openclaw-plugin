@@ -9,7 +9,6 @@ import { fetchDynamicCatalog, mapNanoModelToOpenClaw } from "./catalog";
 // ---------------------------------------------------------------------------
 
 let cachedDynamicModels: ReturnType<typeof mapNanoModelToOpenClaw>[] | null = null;
-let catalogFetched = false;
 
 const STATIC_MODELS: ModelProviderConfig["models"] = [
   {
@@ -156,8 +155,8 @@ export async function buildProviderWithDiscovery(ctx: {
   }
   try {
     const dynamic = await fetchDynamicCatalog({
-      resolveProviderApiKey: (id: string) => ctx.resolveProviderApiKey(id),
-    } as any);
+      resolveProviderApiKey: ctx.resolveProviderApiKey,
+    } as Parameters<typeof fetchDynamicCatalog>[0]);
     if (dynamic) {
       cachedDynamicModels = dynamic.models;
       return dynamic;
@@ -187,17 +186,17 @@ const plugin = defineSingleProviderPluginEntry({
     label: "NanoGPT",
     docsPath: "/providers/nano-gpt",
 
-      auth: [
-        {
-          methodId: "api-key",
-          label: "NanoGPT API key",
-          hint: "API key from your nano-gpt.com dashboard",
-          optionKey: "nanoGptApiKey",
-          flagName: "--nano-gpt-api-key",
-          envVar: "NANOGPT_API_KEY",
-          promptMessage: "Enter your NanoGPT API key",
-        },
-      ],
+    auth: [
+      {
+        methodId: "api-key",
+        label: "NanoGPT API key",
+        hint: "API key from your nano-gpt.com dashboard",
+        optionKey: "nanoGptApiKey",
+        flagName: "--nano-gpt-api-key",
+        envVar: "NANOGPT_API_KEY",
+        promptMessage: "Enter your NanoGPT API key",
+      },
+    ],
 
     catalog: {
       order: "simple",
@@ -208,11 +207,10 @@ const plugin = defineSingleProviderPluginEntry({
         }
         try {
           const dynamic = await fetchDynamicCatalog({
-            resolveProviderApiKey: (id: string) => ctx.resolveProviderApiKey(id),
-          } as any);
+            resolveProviderApiKey: ctx.resolveProviderApiKey,
+          } as Parameters<typeof fetchDynamicCatalog>[0]);
           if (dynamic) {
             cachedDynamicModels = dynamic.models;
-            catalogFetched = true;
             return {
               provider: {
                 ...dynamic,
