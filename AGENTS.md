@@ -286,7 +286,7 @@ When making changes that pass integration tests:
 
 1. **Run unit tests**: `pnpm test`
 2. **Run integration test**: `bash integration_test.sh`
-3. **Update version**: Bump `version` in `package.json` (semver patch for bug fixes, minor for features)
+3. **Update version**: Bump `version` in `package.json` and `openclaw.plugin.json` (semver patch for bug fixes, minor for features)
 4. **Commit**: `git add -A && git commit -m "<type>: <change summary>"`
 5. **Tag**: `git tag <version>` (e.g. `git tag 0.1.3`)
 6. **Push**: `git push && git push --tags`
